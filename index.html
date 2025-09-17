@@ -1,105 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Door Test</title>
-<style>
-  body, html {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    width: 100%;
-    background: url("outside.jpg") no-repeat center center fixed;
-    background-size: cover;
-    overflow: hidden;
-  }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>arched door • swing + enter</title>
 
-  /* container to center door */
-  .scene {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+  <style>
+    /* fullscreen backgrounds */
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+    }
+    body {
+      background: url("outside.jpg") no-repeat center center fixed;
+      background-size: cover;
+      overflow: hidden;
+      transition: background-image 300ms ease;
+    }
+    body.inside {
+      background: url("inside.jpg") no-repeat center center fixed;
+      background-size: cover;
+    }
 
-  /* door setup */
-  .door {
-    position: relative;
-    width: 100px;   /* adjust to fit background */
-    height: 200px;  /* adjust to fit background */
-    background: #663300;
-    border: 5px solid #331a00;
-    box-shadow: inset -10px 0 20px rgba(0,0,0,0.5);
-    transform-origin: left center;
-    transition: transform 1s ease;
-    cursor: pointer;
-  }
+    /* knobs (finite size + arch) */
+    :root{
+      --door-w: 100px;
+      --door-h: 190px;
+      --arch: 58%;
+      --swing: 800ms;
+    }
 
-  .door.open {
-    transform: rotateY(-100deg);
-  }
+    /* stage (3d context) */
+    .scene {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      perspective: 1200px;
+    }
 
-  .door::after {
-    content: "";
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    width: 20px;
-    height: 20px;
-    background: gold;
-    border-radius: 50%;
-    transform: translateY(-50%);
-  }
+    /* door group */
+    .door-area {
+      position: relative;
+      width: var(--door-w);
+      height: var(--door-h);
+      transform-style: preserve-3d;
+    }
 
-  /* hidden inside scene */
-  .inside {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    background: black;
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 2rem;
-    opacity: 0;
-    transition: opacity 1s ease;
-    pointer-events: none;
-  }
+    /* doorway / opening */
+    .doorway {
+      position: absolute;
+      inset: 0;
+      border: 6px solid #2d2015;
+      background: #1b140f;
+      border-bottom-left-radius: 8px;
+      border-bottom-right-radius: 8px;
+      border-top-left-radius: var(--arch);
+      border-top-right-radius: var(--arch);
+      box-shadow: 0 12px 30px rgba(0,0,0,.45);
+      z-index: 0;
+    }
+    .opening-clip {
+      position: absolute;
+      left: 6px;
+      top: 6px;
+      right: 6px;
+      bottom: 6px;
+      overflow: hidden;
+      border-bottom-left-radius: 4px;
+      border-bottom-right-radius: 4px;
+      border-top-left-radius: calc(var(--arch) - 8%);
+      border-top-right-radius: calc(var(--arch) - 8%);
+      z-index: 1;
+    }
+    .inside-peek {
+      position: absolute;
+      inset: 0;
+      background: url("inside.jpg") no-repeat center center;
+      background-size: cover;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 300ms ease 420ms;
+    }
 
-  .inside.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-</style>
+    /* door slab (arched) */
+    .door {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #6b442a;
+      border: 4px solid #3a281a;
+      border-bottom-left-radius: 6px;
+      border-bottom-right-radius: 6px;
+      border-top-left-radius: var(--arch);
+      border-top-right-radius: var(--arch);
+      transform-origin: left center;
+      transform: rotateY(0deg) translateZ(0);
+      transition: transform var(--swing) ease;
+      cursor: pointer;
+      z-index: 2;
+      backface-visibility: hidden;
+      box-shadow: inset -10px 0 20px rgba(0,0,0,.5);
+    }
+    .door::before {
+      content: "";
+      position: absolute;
+      right: -8px;
+      top: 0;
+      width: 8px;
+      height: 100%;
+      background: #4a3321;
+      filter: brightness(.9);
+    }
+    .door::after {
+      content: "";
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      width: 14px;
+      height: 14px;
+      background: #d9c27c;
+      border-radius: 50%;
+      box-shadow: 0 0 3px rgba(0,0,0,.6);
+      transform: translateY(-50%);
+    }
+    .door.open {
+      transform: rotateY(-80deg);
+    }
+
+    /* show peek when door starts opening */
+    .door.open ~ .opening-clip .inside-peek {
+      opacity: 1;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    /* hint */
+    .hint {
+      position: absolute;
+      left: 50%;
+      bottom: 2.2vh;
+      transform: translateX(-50%);
+      padding: .5em .8em;
+      color: #fff;
+      background: rgba(0,0,0,.35);
+      border-radius: 8px;
+      font: 600 14px/1 system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      user-select: none;
+    }
+    body.inside .hint {
+      display: none;
+    }
+
+    /* option a: hide door group after entering */
+    body.inside .door-area {
+      display: none;
+    }
+  </style>
 </head>
 <body>
-<div class="scene">
-  <div class="door" id="door"></div>
-  <div class="inside" id="inside">You’re inside the house 📚</div>
-</div>
+  <div class="scene">
+    <div class="door-area">
+      <div class="doorway"></div>
+      <div class="door" id="door"></div>
+      <div class="opening-clip">
+        <div class="inside-peek" id="insidePeek" title="tap to enter"></div>
+      </div>
+    </div>
 
-<script>
-  const door = document.getElementById("door");
-  const inside = document.getElementById("inside");
-  let entered = false;
+    <div class="hint" id="hint">tap the door • then tap inside</div>
+  </div>
 
-  door.addEventListener("click", () => {
-    if (!door.classList.contains("open") && !entered) {
-      // first click opens door
-      door.classList.add("open");
-    } else if (door.classList.contains("open") && !entered) {
-      // second click enters
-      entered = true;
-      inside.classList.add("visible");
-      door.style.display = "none";
-    }
-  });
-</script>
+  <script>
+    // tap door → swing and reveal peek
+    const body = document.body;
+    const door = document.getElementById('door');
+    const insidePeek = document.getElementById('insidePeek');
+    const hint = document.getElementById('hint');
+
+    door.addEventListener('click', () => {
+      if (!door.classList.contains('open')) {
+        door.classList.add('open');
+        hint.textContent = 'tap inside to enter';
+      }
+    });
+
+    // tap peek → swap to full interior background
+    insidePeek.addEventListener('click', () => {
+      body.classList.add('inside');
+    });
+  </script>
 </body>
 </html>
